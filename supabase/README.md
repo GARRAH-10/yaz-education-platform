@@ -47,3 +47,7 @@ Submit the homepage consultation form. In Supabase open **Table Editor → consu
 - Public users may only read verified catalogue records through RLS.
 - The `consultations` table has no public insert/read policy.
 - Consultation inserts are performed by the Next.js server using the service-role key.
+
+## Existing V21 projects upgrading to V22
+
+Run `migrations/002_programme_details.sql` once in the Supabase SQL Editor. It only adds missing programme columns and indexes; it does not delete existing records.

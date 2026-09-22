@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Building2, ExternalLink, Filter, MapPin, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { UNIVERSITY_ORDER, UNIVERSITY_UI, type UniversitySlug } from "@/data/university-ui";
+import type { UniversityCatalogItem } from "@/lib/catalog-types";
 import type { Locale } from "@/data/content";
 
 type TypeFilter = "all" | "public" | "private" | "college";
@@ -30,9 +30,7 @@ function categoryFor(typeEn: string): TypeFilter {
   return "private";
 }
 
-const DIRECTORY_SLUGS = UNIVERSITY_ORDER.filter((slug) => slug !== "bright");
-
-export function UniversityDirectory({ locale }: { locale: Locale }) {
+export function UniversityDirectory({ locale, items }: { locale: Locale; items: UniversityCatalogItem[] }) {
   const isAr = locale === "ar";
   const [query, setQuery] = useState("");
   const [type, setType] = useState<TypeFilter>("all");
@@ -41,18 +39,17 @@ export function UniversityDirectory({ locale }: { locale: Locale }) {
 
   const locations = useMemo(() => {
     const values = new Set<string>();
-    DIRECTORY_SLUGS.forEach((slug) => {
-      UNIVERSITY_UI[slug].city.split("/").map((item) => item.trim()).filter(Boolean).forEach((item) => values.add(item));
+    items.forEach((item) => {
+      item.city.split("/").map((place) => place.trim()).filter(Boolean).forEach((place) => values.add(place));
     });
     return Array.from(values).sort((a, b) => a.localeCompare(b));
-  }, []);
+  }, [items]);
 
   const filtered = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const studyTerms = STUDY_FILTERS.find((item) => item.key === study)?.terms ?? [];
 
-    return DIRECTORY_SLUGS.filter((slug) => {
-      const item = UNIVERSITY_UI[slug];
+    return items.filter((item) => {
       const searchable = [item.shortName, item.name, item.arabicName, item.city, item.typeEn, item.typeAr, item.summaryEn, item.summaryAr, ...item.studyAreasEn, ...item.studyAreasAr]
         .join(" ")
         .toLowerCase();
@@ -64,7 +61,7 @@ export function UniversityDirectory({ locale }: { locale: Locale }) {
       const matchesStudy = study === "all" || studyTerms.some((term) => areaText.includes(term));
       return matchesQuery && matchesType && matchesLocation && matchesStudy;
     });
-  }, [query, type, location, study]);
+  }, [query, type, location, study, items]);
 
   const hasFilters = query || type !== "all" || location !== "all" || study !== "all";
   const reset = () => {
@@ -127,11 +124,10 @@ export function UniversityDirectory({ locale }: { locale: Locale }) {
 
         {filtered.length ? (
           <div className="directory-grid">
-            {filtered.map((slug) => {
-              const item = UNIVERSITY_UI[slug as UniversitySlug];
+            {filtered.map((item) => {
               const areas = isAr ? item.studyAreasAr : item.studyAreasEn;
               return (
-                <article key={slug} className="directory-card">
+                <article key={item.slug} className="directory-card">
                   <div className="directory-card-top">
                     <div className="directory-logo-wrap">
                       <Image src={item.logo} alt={`${item.name} logo`} fill className="object-contain" sizes="110px" />
@@ -147,7 +143,7 @@ export function UniversityDirectory({ locale }: { locale: Locale }) {
                     </div>
                   </div>
                   <div className="directory-card-actions">
-                    <Link href={`/${locale}/universities/${slug}`} className="directory-profile-link">
+                    <Link href={`/${locale}/universities/${item.slug}`} className="directory-profile-link">
                       {isAr ? "عرض ملف الجامعة" : "View university"}
                       <ArrowRight size={16} className={isAr ? "rotate-180" : ""} />
                     </Link>

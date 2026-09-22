@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Header } from "@/components/header";
 import { Hero } from "@/components/hero";
 import { UniversityStrip } from "@/components/university-strip";
+import { ProgrammeFinder } from "@/components/programme-finder";
 import { ServicesSection } from "@/components/services-section";
 import { JourneySection } from "@/components/journey-section";
 import { WhyYazSection } from "@/components/why-yaz-section";
@@ -30,6 +31,7 @@ export default async function LocalePage({ params }: { params: Promise<{ locale:
     <main lang={safeLocale === "ar" ? "ar" : "en-MY"}>
       <Header locale={safeLocale} />
       <Hero locale={safeLocale} />
+      <ProgrammeFinder locale={safeLocale} />
       <UniversityStrip locale={safeLocale} />
       <ServicesSection locale={safeLocale} />
       <JourneySection locale={safeLocale} />

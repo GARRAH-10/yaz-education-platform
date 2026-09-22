@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/json-ld";
+import { AiAdvisor } from "@/components/ai-advisor";
 import { organizationJsonLd, websiteJsonLd } from "@/lib/seo";
 import type { Locale } from "@/data/content";
 
@@ -22,6 +23,7 @@ export default async function LocaleLayout({
     <div lang={safeLocale === "ar" ? "ar" : "en-MY"} dir={safeLocale === "ar" ? "rtl" : "ltr"}>
       <JsonLd data={[organizationJsonLd(safeLocale), websiteJsonLd(safeLocale)]} />
       {children}
+      <AiAdvisor locale={safeLocale} />
     </div>
   );
 }

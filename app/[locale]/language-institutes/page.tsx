@@ -7,6 +7,7 @@ import { LanguageInstituteDirectory } from "@/components/language-institute-dire
 import { JsonLd } from "@/components/json-ld";
 import type { Locale } from "@/data/content";
 import { breadcrumbJsonLd, buildMetadata, SEO_TEXT } from "@/lib/seo";
+import { getLanguageInstitutes } from "@/lib/catalog";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -21,6 +22,7 @@ export default async function LanguageInstitutesPage({ params }: { params: Promi
   if (locale !== "en" && locale !== "ar") notFound();
   const safeLocale = locale as Locale;
   const isAr = safeLocale === "ar";
+  const institutes = await getLanguageInstitutes();
 
   return (
     <main className="language-directory-page" dir={isAr ? "rtl" : "ltr"}>
@@ -37,7 +39,7 @@ export default async function LanguageInstitutesPage({ params }: { params: Promi
           <p>{isAr ? "قارن بين المعاهد حسب الموقع ونوع البرنامج، ثم افتح الملف الكامل لكل معهد لمراجعة الدورات والموقع الرسمي ومعلومات التسجيل." : "Compare language institutes by location and programme type, then open each profile for courses, official links and enrolment guidance."}</p>
         </div>
       </section>
-      <LanguageInstituteDirectory locale={safeLocale} />
+      <LanguageInstituteDirectory locale={safeLocale} institutes={institutes} />
       <Footer locale={safeLocale} />
       <WhatsAppContact locale={safeLocale} />
     </main>

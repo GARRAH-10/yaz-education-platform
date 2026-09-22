@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, BookOpenText, ExternalLink, Languages, MapPin, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { LANGUAGE_INSTITUTES } from "@/data/language-institutes";
+import type { LanguageInstitute } from "@/data/language-institutes";
 import type { Locale } from "@/data/content";
 
 type Focus = "all" | "general" | "academic" | "ielts" | "business" | "junior" | "online";
@@ -19,7 +19,7 @@ const focusOptions: Array<{ key: Focus; en: string; ar: string }> = [
   { key: "online", en: "Online", ar: "أونلاين" },
 ];
 
-export function LanguageInstituteDirectory({ locale }: { locale: Locale }) {
+export function LanguageInstituteDirectory({ locale, institutes }: { locale: Locale; institutes: LanguageInstitute[] }) {
   const isAr = locale === "ar";
   const [query, setQuery] = useState("");
   const [location, setLocation] = useState("all");
@@ -27,20 +27,20 @@ export function LanguageInstituteDirectory({ locale }: { locale: Locale }) {
 
   const locations = useMemo(() => {
     const all = new Set<string>();
-    LANGUAGE_INSTITUTES.forEach((item) => item.locations.forEach((place) => all.add(place)));
+    institutes.forEach((item) => item.locations.forEach((place) => all.add(place)));
     return Array.from(all).sort();
-  }, []);
+  }, [institutes]);
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return LANGUAGE_INSTITUTES.filter((item) => {
+    return institutes.filter((item) => {
       const text = [item.name, item.shortName, item.arabicName, item.city, ...item.coursesEn, ...item.coursesAr].join(" ").toLowerCase();
       const matchesQuery = !q || text.includes(q);
       const matchesLocation = location === "all" || item.locations.includes(location);
       const matchesFocus = focus === "all" || item.focus.includes(focus);
       return matchesQuery && matchesLocation && matchesFocus;
     });
-  }, [query, location, focus]);
+  }, [query, location, focus, institutes]);
 
   const clear = () => {
     setQuery("");

@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { AiAdvisor } from "@/components/ai-advisor";
 import { content, type Locale } from "@/data/content";
 
 export function Hero({ locale }: { locale: Locale }) {
@@ -52,7 +51,6 @@ export function Hero({ locale }: { locale: Locale }) {
         </div>
       </div>
 
-      <AiAdvisor locale={locale} />
     </section>
   );
 }

@@ -7,12 +7,23 @@ import { useEffect, useRef, useState } from "react";
 import { content, type Locale } from "@/data/content";
 import { UNIVERSITY_ORDER, UNIVERSITY_UI } from "@/data/university-ui";
 import { LANGUAGE_INSTITUTES } from "@/data/language-institutes";
+import { STUDY_FIELD_GROUPS } from "@/data/study-fields";
 
 type DropItem = { label: string; href: string; viewAll?: boolean };
 
 type NavEntry =
-  | { label: string; href: string; items?: never }
-  | { label: string; href?: never; items: DropItem[] };
+  | { label: string; href: string; items?: never; kind?: never }
+  | { label: string; href?: never; items: DropItem[]; kind?: "standard" }
+  | { label: string; href?: never; items?: never; kind: "programmes" };
+
+const PROGRAMME_GROUP_NAMES = [
+  "Engineering",
+  "Computing & Digital Technology",
+  "Business & Management",
+  "Medicine & Health Sciences",
+  "Architecture & Built Environment",
+  "Law, Social Sciences & Education",
+];
 
 export function Header({ locale }: { locale: Locale }) {
   const t = content[locale].nav;
@@ -25,9 +36,7 @@ export function Header({ locale }: { locale: Locale }) {
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
       const target = event.target as Node;
-      if (navRef.current && !navRef.current.contains(target)) {
-        setActiveDropdown(null);
-      }
+      if (navRef.current && !navRef.current.contains(target)) setActiveDropdown(null);
     }
 
     function handleKeyDown(event: KeyboardEvent) {
@@ -36,7 +45,6 @@ export function Header({ locale }: { locale: Locale }) {
 
     document.addEventListener("mousedown", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
-
     return () => {
       document.removeEventListener("mousedown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
@@ -53,11 +61,6 @@ export function Header({ locale }: { locale: Locale }) {
           href: `/${locale}/universities/${slug}`,
         };
       }),
-    {
-      label: isAr ? "البحث عن برنامج دراسي" : "Search programmes",
-      href: `/${locale}/programmes`,
-      viewAll: true,
-    },
     {
       label: isAr ? "عرض كل الجامعات" : "View all universities",
       href: `/${locale}/universities`,
@@ -77,11 +80,17 @@ export function Header({ locale }: { locale: Locale }) {
     },
   ];
 
+  const programmeGroups = STUDY_FIELD_GROUPS
+    .filter((group) => PROGRAMME_GROUP_NAMES.includes(group.group))
+    .map((group) => ({ ...group, fields: group.fields.slice(0, 5) }));
+
+  const programmeHref = (field: string) => `/${locale}/programmes?field=${encodeURIComponent(field)}`;
 
   const links: NavEntry[] = [
     { label: t.home, href: `/${locale}` },
-    { label: t.universities, items: universityItems },
-    { label: isAr ? "معاهد اللغة" : "Language Institutes", items: languageItems },
+    { label: t.universities, items: universityItems, kind: "standard" },
+    { label: isAr ? "معاهد اللغة" : "Language Institutes", items: languageItems, kind: "standard" },
+    { label: t.programs, kind: "programmes" },
     { label: t.services, href: `/${locale}#services` },
     { label: t.about, href: `/${locale}#about` },
     { label: t.contact, href: `/${locale}#contact` },
@@ -100,15 +109,12 @@ export function Header({ locale }: { locale: Locale }) {
           </div>
         </Link>
 
-        <nav ref={navRef} className="hidden items-center gap-5 lg:flex" aria-label="Primary navigation">
+        <nav ref={navRef} className="hidden items-center gap-4 xl:flex" aria-label="Primary navigation">
           {links.map((entry, index) => {
-            if (entry.items) {
+            if (entry.kind === "programmes") {
               const isOpen = activeDropdown === entry.label;
               return (
-                <div
-                  key={entry.label}
-                  className={`nav-dropdown ${isOpen ? "nav-dropdown-active" : ""}`}
-                >
+                <div key={entry.label} className={`nav-dropdown ${isOpen ? "nav-dropdown-active" : ""}`}>
                   <button
                     type="button"
                     className="nav-link nav-dropdown-trigger"
@@ -119,10 +125,48 @@ export function Header({ locale }: { locale: Locale }) {
                     {entry.label}
                     <ChevronDown size={15} className={`nav-chevron ${isOpen ? "rotate-180" : ""}`} />
                   </button>
-                  <div
-                    className={`nav-dropdown-menu ${entry.label === t.universities ? "nav-dropdown-menu-mega" : ""} ${isOpen ? "nav-dropdown-menu-open" : ""}`}
-                    role="menu"
+                  <div className={`nav-dropdown-menu nav-programme-mega ${isOpen ? "nav-dropdown-menu-open" : ""}`} role="menu">
+                    <div className="nav-programme-mega-head">
+                      <div>
+                        <span>{isAr ? "استكشف حسب المجال" : "EXPLORE BY FIELD"}</span>
+                        <strong>{isAr ? "اختر مجال الدراسة" : "Choose a study field"}</strong>
+                      </div>
+                      <Link href={`/${locale}/programmes`} onClick={() => setActiveDropdown(null)}>
+                        {isAr ? "عرض كل البرامج" : "Browse all programmes"} →
+                      </Link>
+                    </div>
+                    <div className="nav-programme-mega-grid">
+                      {programmeGroups.map((group) => (
+                        <div key={group.group} className="nav-programme-group">
+                          <p>{isAr ? group.groupAr : group.group}</p>
+                          {group.fields.map((field) => (
+                            <Link key={field.value} href={programmeHref(field.value)} onClick={() => setActiveDropdown(null)}>
+                              {isAr ? field.labelAr : field.value}
+                            </Link>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            if (entry.items) {
+              const isOpen = activeDropdown === entry.label;
+              return (
+                <div key={entry.label} className={`nav-dropdown ${isOpen ? "nav-dropdown-active" : ""}`}>
+                  <button
+                    type="button"
+                    className="nav-link nav-dropdown-trigger"
+                    aria-expanded={isOpen}
+                    onClick={() => setActiveDropdown(isOpen ? null : entry.label)}
+                    aria-haspopup="menu"
                   >
+                    {entry.label}
+                    <ChevronDown size={15} className={`nav-chevron ${isOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  <div className={`nav-dropdown-menu ${entry.label === t.universities ? "nav-dropdown-menu-mega" : ""} ${isOpen ? "nav-dropdown-menu-open" : ""}`} role="menu">
                     {entry.items.map((item) => (
                       <Link
                         key={item.label}
@@ -144,12 +188,12 @@ export function Header({ locale }: { locale: Locale }) {
               </Link>
             );
           })}
-          <Link href={`/${locale}/programmes`} className="nav-icon" aria-label={isAr ? "البحث عن برنامج" : "Search programmes"}>
+          <Link href={`/${locale}/programmes`} prefetch className="nav-icon" aria-label={isAr ? "البحث العام عن برنامج" : "General programme search"}>
             <Search size={19} />
           </Link>
         </nav>
 
-        <div className="hidden items-center gap-4 lg:flex">
+        <div className="hidden items-center gap-4 xl:flex">
           <Link href={`/${other}`} className="text-sm font-semibold text-blue-200 transition hover:text-white">
             {t.language}
           </Link>
@@ -160,26 +204,44 @@ export function Header({ locale }: { locale: Locale }) {
           </Link>
         </div>
 
-        <button type="button" className="nav-icon lg:hidden" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-label="Menu">
+        <button type="button" className="nav-icon xl:hidden" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-label="Menu">
           {open ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
       {open && (
-        <div className="mx-4 rounded-2xl border border-white/10 bg-[#06111f]/95 p-4 shadow-2xl backdrop-blur-xl lg:hidden">
+        <div className="mx-4 rounded-2xl border border-white/10 bg-[#06111f]/95 p-4 shadow-2xl backdrop-blur-xl xl:hidden">
           <nav className="grid gap-1">
-            {links.map((entry) =>
-              entry.items ? (
+            {links.map((entry) => {
+              if (entry.kind === "programmes") {
+                return (
+                  <details key={entry.label} className="mobile-nav-group">
+                    <summary>{entry.label}<ChevronDown size={16} /></summary>
+                    <div className="mobile-nav-submenu mobile-programme-submenu">
+                      {programmeGroups.map((group) => (
+                        <div key={group.group} className="mobile-programme-group">
+                          <p>{isAr ? group.groupAr : group.group}</p>
+                          {group.fields.slice(0, 3).map((field) => (
+                            <Link key={field.value} href={programmeHref(field.value)} onClick={() => setOpen(false)}>
+                              {isAr ? field.labelAr : field.value}
+                            </Link>
+                          ))}
+                        </div>
+                      ))}
+                      <Link href={`/${locale}/programmes`} onClick={() => setOpen(false)} className="mobile-nav-view-all">
+                        {isAr ? "عرض كل البرامج والمجالات" : "Browse all programmes and fields"}
+                      </Link>
+                    </div>
+                  </details>
+                );
+              }
+
+              return entry.items ? (
                 <details key={entry.label} className="mobile-nav-group">
                   <summary>{entry.label}<ChevronDown size={16} /></summary>
                   <div className="mobile-nav-submenu">
                     {entry.items.map((item) => (
-                      <Link
-                        key={item.label}
-                        href={item.href}
-                        onClick={() => setOpen(false)}
-                        className={item.viewAll ? "mobile-nav-view-all" : undefined}
-                      >
+                      <Link key={item.label} href={item.href} onClick={() => setOpen(false)} className={item.viewAll ? "mobile-nav-view-all" : undefined}>
                         {item.label}
                       </Link>
                     ))}
@@ -189,8 +251,8 @@ export function Header({ locale }: { locale: Locale }) {
                 <Link key={entry.href} href={entry.href} onClick={() => setOpen(false)} className="rounded-xl px-4 py-3 text-sm font-medium text-white/80 hover:bg-white/8 hover:text-white">
                   {entry.label}
                 </Link>
-              )
-            )}
+              );
+            })}
             <div className="mt-2 grid grid-cols-2 gap-2">
               <Link href={`/${other}`} className="rounded-xl border border-white/15 px-4 py-3 text-center text-sm font-semibold text-white">{t.language}</Link>
               <Link href={`/${locale}#consultation`} className="rounded-xl bg-brand-blue px-4 py-3 text-center text-sm font-bold text-white">{t.consult}</Link>

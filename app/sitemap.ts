@@ -1,19 +1,21 @@
 import type { MetadataRoute } from "next";
-import { UNIVERSITY_UI } from "@/data/university-ui";
-import { LANGUAGE_INSTITUTES } from "@/data/language-institutes";
-import { PROGRAMMES } from "@/data/programmes";
 import { getSiteUrl } from "@/lib/seo";
+import { getUniversities, getLanguageInstitutes, getProgrammes } from "@/lib/catalog";
 
 const locales = ["en", "ar"] as const;
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = getSiteUrl();
   const now = new Date();
   const entries: MetadataRoute.Sitemap = [];
+  const [universities, institutes, programmes] = await Promise.all([
+    getUniversities(),
+    getLanguageInstitutes(),
+    getProgrammes(),
+  ]);
 
   for (const locale of locales) {
     const root = `${base}/${locale}`;
-
     entries.push(
       { url: root, lastModified: now, changeFrequency: "weekly", priority: 1 },
       { url: `${root}/universities`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
@@ -21,26 +23,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       { url: `${root}/language-institutes`, lastModified: now, changeFrequency: "weekly", priority: 0.85 },
     );
 
-    for (const slug of Object.keys(UNIVERSITY_UI)) {
-      if (slug === "bright") continue;
+    for (const university of universities) {
       entries.push({
-        url: `${root}/universities/${slug}`,
-        lastModified: now,
+        url: `${root}/universities/${university.slug}`,
+        lastModified: university.verifiedAt ? new Date(university.verifiedAt) : now,
         changeFrequency: "monthly",
         priority: 0.8,
       });
     }
-
-    for (const institute of LANGUAGE_INSTITUTES) {
-      entries.push({
-        url: `${root}/language-institutes/${institute.slug}`,
-        lastModified: now,
-        changeFrequency: "monthly",
-        priority: 0.75,
-      });
+    for (const institute of institutes) {
+      entries.push({ url: `${root}/language-institutes/${institute.slug}`, lastModified: now, changeFrequency: "monthly", priority: 0.75 });
     }
-
-    for (const programme of PROGRAMMES) {
+    for (const programme of programmes) {
       entries.push({
         url: `${root}/programmes/${programme.slug}`,
         lastModified: programme.verifiedAt ? new Date(programme.verifiedAt) : now,
@@ -49,6 +43,5 @@ export default function sitemap(): MetadataRoute.Sitemap {
       });
     }
   }
-
   return entries;
 }

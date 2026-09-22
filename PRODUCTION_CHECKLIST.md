@@ -1,45 +1,55 @@
-# YAZ Education Production Checklist
+# YAZ Education V25 Production Checklist
 
-## Code
-- [ ] `npm run typecheck` passes
-- [ ] `npm run build` passes
-- [ ] No console errors on main pages
-- [ ] No dead internal links
+## Build
+- [ ] `npm install`
+- [ ] `npm run typecheck`
+- [ ] `npm run build`
 
-## Security
-- [ ] `.env.local` is not committed
-- [ ] Old/exposed API keys revoked
-- [ ] Supabase service-role key exists only server-side
-- [ ] Production secrets configured in Vercel
+## Vercel secrets
+- [ ] `NEXT_PUBLIC_SITE_URL`
+- [ ] `NEXT_PUBLIC_SUPABASE_URL`
+- [ ] `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- [ ] `SUPABASE_SERVICE_ROLE_KEY`
+- [ ] `ADMIN_DASHBOARD_EMAIL`
+- [ ] `ADMIN_DASHBOARD_PASSWORD`
+- [ ] `ADMIN_SESSION_SECRET`
+- [ ] `GEMINI_API_KEY`
+- [ ] `GEMINI_MODEL`
+- [ ] `GEMINI_FALLBACK_MODELS`
+- [ ] `YAZ_AI_WEB_SEARCH=false`
 
-## Domain / SEO
-- [ ] Final domain chosen
-- [ ] `NEXT_PUBLIC_SITE_URL` equals final HTTPS domain
-- [ ] `/robots.txt` works
-- [ ] `/sitemap.xml` works
-- [ ] Arabic/English canonical + hreflang checked
-- [ ] Search Console verified
-- [ ] Sitemap submitted
+## Health
+- [ ] `/api/health` returns `supabaseConnected: true`
+- [ ] `/api/health` returns `adminConfigured: true`
+- [ ] `/api/health` returns `aiConfigured: true`
+- [ ] `/api/health/ai` works without making a model call
 
-## Content
-- [ ] University data reviewed against official sources
-- [ ] Language institute data reviewed
-- [ ] Programme fees/intakes include dates or verification notes
-- [ ] YAZ contact details confirmed
-- [ ] No unsupported partnership claims
+## Admin
+- [ ] `/admin/login` works over HTTPS
+- [ ] admin page is not indexed
+- [ ] create temporary test record
+- [ ] edit temporary test record
+- [ ] delete temporary test record
 
-## UX
-- [ ] Desktop tested
-- [ ] iPhone/mobile width tested
-- [ ] Android/mobile width tested
-- [ ] Arabic RTL tested
-- [ ] Dropdowns tested
-- [ ] Consultation form tested
-- [ ] WhatsApp links tested
+## Leads
+- [ ] submit test consultation
+- [ ] lead stored in Supabase
+- [ ] lead visible in Admin
+- [ ] lead status can be updated
 
-## Launch
-- [ ] GitHub main branch clean
-- [ ] Vercel production deployment successful
-- [ ] Custom domain resolves with HTTPS
-- [ ] Production pages manually checked
-- [ ] Search Console indexing requested
+## Public site
+- [ ] `/en`
+- [ ] `/ar`
+- [ ] programme search
+- [ ] university pages
+- [ ] language institute pages
+- [ ] comparison
+- [ ] WhatsApp CTAs
+
+## SEO/security
+- [ ] canonical domain correct
+- [ ] `/robots.txt`
+- [ ] `/sitemap.xml`
+- [ ] admin excluded from indexing
+- [ ] no secrets committed to GitHub
+- [ ] old exposed keys revoked

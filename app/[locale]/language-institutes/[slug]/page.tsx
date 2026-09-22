@@ -7,7 +7,8 @@ import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { WhatsAppContact } from "@/components/whatsapp-contact";
 import { JsonLd } from "@/components/json-ld";
-import { LANGUAGE_INSTITUTE_BY_SLUG, LANGUAGE_INSTITUTES } from "@/data/language-institutes";
+import { LANGUAGE_INSTITUTES } from "@/data/language-institutes";
+import { getLanguageInstituteBySlug } from "@/lib/catalog";
 import type { Locale } from "@/data/content";
 import { absoluteUrl, breadcrumbJsonLd, buildMetadata } from "@/lib/seo";
 
@@ -19,7 +20,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug } = await params;
   if (locale !== "en" && locale !== "ar") return {};
-  const institute = LANGUAGE_INSTITUTE_BY_SLUG[slug];
+  const institute = await getLanguageInstituteBySlug(slug);
   if (!institute) return {};
   const safeLocale = locale as Locale;
   const title = safeLocale === "ar"
@@ -32,7 +33,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function LanguageInstituteProfile({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params;
   if (locale !== "en" && locale !== "ar") notFound();
-  const institute = LANGUAGE_INSTITUTE_BY_SLUG[slug];
+  const institute = await getLanguageInstituteBySlug(slug);
   if (!institute) notFound();
 
   const safeLocale = locale as Locale;

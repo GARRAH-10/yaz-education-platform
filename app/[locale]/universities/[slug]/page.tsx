@@ -15,13 +15,13 @@ import {
   GraduationCap,
   Globe2,
   MapPin,
-  WalletCards,
 } from "lucide-react";
 import { Header } from "@/components/header";
 import { WhatsAppContact } from "@/components/whatsapp-contact";
 import { JsonLd } from "@/components/json-ld";
-import { VERIFIED_AT, VERIFIED_UNIVERSITIES } from "@/data/verified-universities";
-import { UNIVERSITY_UI, type UniversitySlug } from "@/data/university-ui";
+import { VERIFIED_AT } from "@/data/verified-universities";
+import { UNIVERSITY_UI } from "@/data/university-ui";
+import { getUniversityBySlug, getProgrammesByUniversitySlug } from "@/lib/catalog";
 import type { Locale } from "@/data/content";
 import { absoluteUrl, breadcrumbJsonLd, buildMetadata } from "@/lib/seo";
 
@@ -36,9 +36,10 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug } = await params;
-  if ((locale !== "en" && locale !== "ar") || !(slug in UNIVERSITY_UI)) return {};
+  if (locale !== "en" && locale !== "ar") return {};
   const safeLocale = locale as Locale;
-  const ui = UNIVERSITY_UI[slug as UniversitySlug];
+  const ui = await getUniversityBySlug(slug);
+  if (!ui) return {};
   const title = safeLocale === "ar"
     ? `${ui.arabicName} في ماليزيا – التخصصات والقبول`
     : `${ui.name} Malaysia – Study Areas, Admission & Campus`;
@@ -48,14 +49,16 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function UniversityPage({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params;
-  if ((locale !== "en" && locale !== "ar") || !(slug in UNIVERSITY_UI)) notFound();
+  if (locale !== "en" && locale !== "ar") notFound();
 
   const safeLocale = locale as Locale;
-  const safeSlug = slug as UniversitySlug;
+  const safeSlug = slug;
   const isAr = safeLocale === "ar";
-  const ui = UNIVERSITY_UI[safeSlug];
-  const university = VERIFIED_UNIVERSITIES.find((item) => item.shortName === ui.shortName);
-  const verifiedProgrammes = university?.programmes ?? [];
+  const [ui, verifiedProgrammes] = await Promise.all([
+    getUniversityBySlug(slug),
+    getProgrammesByUniversitySlug(slug),
+  ]);
+  if (!ui) notFound();
   const studyAreas = isAr ? ui.studyAreasAr : ui.studyAreasEn;
   const websiteHost = ui.officialUrl.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0];
 
@@ -185,7 +188,7 @@ export default async function UniversityPage({ params }: { params: Promise<{ loc
       <nav className="profile-tabs-wrap" aria-label={isAr ? "أقسام ملف الجامعة" : "University profile sections"}>
         <div className="profile-tabs mx-auto max-w-[1280px]">
           <a href="#overview">{isAr ? "نظرة عامة" : "Overview"}</a>
-          <a href="#programmes">{verifiedProgrammes.length ? (isAr ? "البرامج والرسوم" : "Programmes & Fees") : (isAr ? "مجالات الدراسة" : "Study Areas")}</a>
+          <a href="#programmes">{verifiedProgrammes.length ? (isAr ? "البرامج" : "Programmes") : (isAr ? "مجالات الدراسة" : "Study Areas")}</a>
           <a href="#apply">{isAr ? "كيفية التقديم" : "How to Apply"}</a>
           <a href="#campus">{isAr ? "الحرم والسكن" : "Campus & Accommodation"}</a>
           <a href="#faq">{isAr ? "الأسئلة الشائعة" : "FAQ"}</a>
@@ -210,7 +213,7 @@ export default async function UniversityPage({ params }: { params: Promise<{ loc
               {ui.verified ? (
                 <div className="profile-verified-note">
                   <BadgeCheck size={18} />
-                  <span>{isAr ? `تمت مراجعة بيانات الملف بتاريخ ${VERIFIED_AT}.` : `Profile data reviewed on ${VERIFIED_AT}.`}</span>
+                  <span>{isAr ? `تمت مراجعة بيانات الملف بتاريخ ${ui.verifiedAt ?? VERIFIED_AT}.` : `Profile data reviewed on ${ui.verifiedAt ?? VERIFIED_AT}.`}</span>
                 </div>
               ) : (
                 <div className="profile-progress-note">
@@ -236,7 +239,7 @@ export default async function UniversityPage({ params }: { params: Promise<{ loc
           <div className="profile-section-heading profile-section-heading-row">
             <div>
               <p>{isAr ? "الدراسة" : "STUDY OPTIONS"}</p>
-              <h2>{verifiedProgrammes.length ? (isAr ? "البرامج والرسوم" : "Programmes & Fees") : (isAr ? "مجالات الدراسة" : "Study Areas")}</h2>
+              <h2>{verifiedProgrammes.length ? (isAr ? "البرامج" : "Programmes") : (isAr ? "مجالات الدراسة" : "Study Areas")}</h2>
             </div>
             {verifiedProgrammes.length ? <span className="profile-count-pill">{verifiedProgrammes.length} {isAr ? "برامج موثقة" : "verified programmes"}</span> : null}
           </div>
@@ -250,7 +253,6 @@ export default async function UniversityPage({ params }: { params: Promise<{ loc
                   <div className="program-meta-list">
                     {program.duration && <div><Clock3 size={17} /><span>{program.duration}</span></div>}
                     {program.intakes?.length ? <div><CalendarDays size={17} /><span>{program.intakes.join(" · ")}</span></div> : null}
-                    {program.internationalFee && <div><WalletCards size={17} /><span>{program.internationalFee}</span></div>}
                     {program.campus && <div><MapPin size={17} /><span>{program.campus}</span></div>}
                   </div>
                   {program.specialisations?.length ? (
@@ -275,7 +277,7 @@ export default async function UniversityPage({ params }: { params: Promise<{ loc
                 ))}
               </div>
               <div className="profile-study-options-note">
-                <p>{isAr ? "هذه مجالات عامة موثقة من الموقع الرسمي. تفاصيل البرامج والرسوم ومواعيد القبول تختلف حسب البرنامج والسنة الدراسية." : "These are broad study areas verified from the institution's official website. Programme-level fees, intakes and requirements can vary by programme and academic year."}</p>
+                <p>{isAr ? "هذه مجالات عامة موثقة من الموقع الرسمي. تفاصيل البرامج ومواعيد القبول تختلف حسب البرنامج والسنة الدراسية. للحصول على أحدث الرسوم تواصل مع مستشار YAZ." : "These are broad study areas verified from the institution's official website. Programme details, intakes and requirements can vary by programme and academic year. Contact a YAZ advisor for the latest tuition fee."}</p>
                 <a href={ui.officialUrl} target="_blank" rel="noreferrer" className="profile-browse-official">
                   {isAr ? "تصفح البرامج في الموقع الرسمي" : "Browse programmes on the official website"}
                   <ExternalLink size={16} />
@@ -350,7 +352,7 @@ export default async function UniversityPage({ params }: { params: Promise<{ loc
           <div className="profile-faq-list">
             <details>
               <summary>{isAr ? "هل الرسوم ثابتة؟" : "Are the fees fixed?"}</summary>
-              <p>{isAr ? "لا. الرسوم يمكن أن تتغير بين السنوات والفصول، لذلك نعيد تأكيدها قبل التقديم." : "No. Fees can change between academic years and intakes, so they are reconfirmed before application."}</p>
+              <p>{isAr ? "لا. الرسوم قد تتغير حسب السنة والدفعة والبرنامج، لذلك لا نعرض سعراً ثابتاً للعامة ويؤكد مستشار YAZ أحدث رسوم قبل التقديم." : "No. Tuition can change by academic year, intake and programme, so YAZ does not publish a fixed public fee and an advisor reconfirms the latest amount before application."}</p>
             </details>
             <details>
               <summary>{isAr ? "هل مواعيد القبول واحدة لكل التخصصات؟" : "Are intake dates the same for every programme?"}</summary>

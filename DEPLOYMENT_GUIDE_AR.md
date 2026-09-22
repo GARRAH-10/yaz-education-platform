@@ -1,10 +1,10 @@
-# دليل إطلاق YAZ Education — V20
+# دليل نشر YAZ Education V25 على Vercel
 
-هذه النسخة مجهزة لمرحلة **Production → GitHub → Vercel → Domain → Google Search Console**.
+V25 مخصص لتثبيت بيئة الإنتاج: **Vercel + Supabase + Admin Dashboard + Environment Variables**. مشكلة استجابة الـAI نعود لها بعد أن نتأكد أن البنية الإنتاجية مستقرة.
 
-## 1. فحص Production على جهازك
+## 1. فحص المشروع محلياً
 
-داخل مجلد المشروع:
+من داخل المجلد الذي يحتوي `package.json`:
 
 ```powershell
 npm install
@@ -12,147 +12,108 @@ npm run typecheck
 npm run build
 ```
 
-يجب إصلاح أي خطأ قبل النشر. بعد نجاح البناء يمكنك تجربة نسخة Production محلياً:
+إذا نجح البناء، شغّل نسخة Production محلياً:
 
 ```powershell
 npm start
 ```
 
-## 2. ملف البيئة المحلي
+## 2. لا ترفع `.env.local`
 
-انسخ `.env.example` إلى `.env.local`. لا ترفع `.env.local` إلى GitHub.
+الملف موجود في `.gitignore`. القيم السرية توضع يدوياً في Vercel.
 
-أهم قيمة وقت النشر:
+## 3. متغيرات Vercel المطلوبة
 
-```env
-NEXT_PUBLIC_SITE_URL=https://YOUR-DOMAIN.com
-```
+Vercel → Project → Settings → Environment Variables.
 
-مفاتيح OpenAI وSupabase تبقى أسراراً Server-side ولا توضع في GitHub.
-
-## 3. إنشاء GitHub Repository
-
-اقتراح الاسم:
-
-```text
-yaz-education-platform
-```
-
-ثم من داخل المشروع:
-
-```powershell
-git init
-git add .
-git commit -m "Prepare YAZ Education for production launch"
-git branch -M main
-git remote add origin YOUR_GITHUB_REPOSITORY_URL
-git push -u origin main
-```
-
-المشروع يحتوي GitHub Action يقوم تلقائياً بـ TypeScript check وProduction build لكل Push/PR إلى `main`.
-
-## 4. ربط GitHub مع Vercel
-
-في Vercel:
-
-1. Add New → Project
-2. Import `yaz-education-platform` من GitHub
-3. Framework يجب أن يتعرف تلقائياً على Next.js
-4. أضف Environment Variables
-5. Deploy
-
-### Environment Variables المهمة في Vercel
+أضف للـProduction:
 
 ```env
-NEXT_PUBLIC_SITE_URL=https://YOUR-DOMAIN.com
+NEXT_PUBLIC_SITE_URL=https://YOUR-PRODUCTION-DOMAIN
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...
+ADMIN_DASHBOARD_EMAIL=...
+ADMIN_DASHBOARD_PASSWORD=...
+ADMIN_SESSION_SECRET=...
+GEMINI_API_KEY=...
+GEMINI_MODEL=gemini-3.5-flash-lite
+GEMINI_FALLBACK_MODELS=gemini-3.5-flash
+YAZ_AI_WEB_SEARCH=false
 GOOGLE_SITE_VERIFICATION=
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_ANON_KEY=
-SUPABASE_SERVICE_ROLE_KEY=
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-5.6-luna
 ```
 
-يمكن ترك Supabase/OpenAI فارغين مؤقتاً إذا لم نفعلهما Production بعد، بشرط أن تبقى الواجهات التي تعتمد عليهما متحملة لغيابهما.
+لا ترسل أو ترفع هذه القيم: `SUPABASE_SERVICE_ROLE_KEY`, `ADMIN_DASHBOARD_PASSWORD`, `ADMIN_SESSION_SECRET`, `GEMINI_API_KEY`.
 
-## 5. ربط الدومين
+## 4. Deploy / Redeploy
 
-بعد شراء الدومين، أضفه في Vercel: Settings → Domains.
+بعد تحديث GitHub والمتغيرات، اعمل Redeploy لآخر commit على `main`.
 
-يفضل اختيار نسخة canonical واحدة فقط، مثل:
+## 5. افحص حالة النظام
+
+افتح:
 
 ```text
-https://yazeducation.com
+https://YOUR-DOMAIN/api/health
 ```
 
-أو:
+نريد أن نرى تقريباً:
+
+```json
+{
+  "ok": true,
+  "supabaseConfigured": true,
+  "supabaseConnected": true,
+  "adminConfigured": true,
+  "aiConfigured": true
+}
+```
+
+ثم:
 
 ```text
-https://www.yazeducation.com
+https://YOUR-DOMAIN/api/health/ai
 ```
 
-ثم اجعل النسخة الأخرى Redirect إليها.
+هذا يفحص إعداد Gemini فقط ولا يستهلك request مدفوع/محدود.
 
-بعد ربط الدومين عدّل `NEXT_PUBLIC_SITE_URL` في Vercel إلى الدومين النهائي وأعد Deploy.
+## 6. افحص Admin في Production
 
-## 6. افحص ملفات SEO بعد النشر
+افتح:
 
-يجب أن تعمل هذه الروابط على الدومين الحقيقي:
+```text
+https://YOUR-DOMAIN/admin/login
+```
+
+سجّل الدخول بالقيم الموجودة في Vercel. في Production يستخدم V25 cookie أكثر صرامة يبدأ بـ `__Host-` ويعمل مع HTTPS فقط.
+
+## 7. اختبار end-to-end
+
+1. أرسل Consultation تجريبية من الموقع.
+2. افتح Admin وتأكد أن lead ظهرت.
+3. أضف سجل TEST غير verified.
+4. عدّله.
+5. احذفه.
+
+إذا نجحت هذه الخطوات، فـVercel ↔ Next.js ↔ Supabase ↔ Admin تعمل إنتاجياً.
+
+## 8. الدومين وSEO
+
+بعد ربط الدومين النهائي، حدّث:
+
+```env
+NEXT_PUBLIC_SITE_URL=https://YOUR-FINAL-DOMAIN
+```
+
+ثم Redeploy وتحقق من:
 
 ```text
 /robots.txt
 /sitemap.xml
-/manifest.webmanifest
 /en
 /ar
-/en/universities
-/ar/universities
-/en/programmes
-/ar/programmes
-/en/language-institutes
-/ar/language-institutes
 ```
 
-## 7. Google Search Console
+## 9. بعد V25
 
-1. أضف Domain Property أو URL-prefix Property.
-2. أكمل Verification.
-3. ضع قيمة HTML-tag verification في `GOOGLE_SITE_VERIFICATION` إذا استخدمت هذا الأسلوب.
-4. أرسل:
-
-```text
-https://YOUR-DOMAIN.com/sitemap.xml
-```
-
-5. استخدم URL Inspection للصفحات المهمة واطلب Indexing.
-
-ابدأ بهذه الصفحات:
-
-- `/en`
-- `/ar`
-- `/en/universities`
-- `/ar/universities`
-- صفحات الجامعات الأقوى
-- صفحات البرامج المكتملة
-- صفحات معاهد اللغة
-
-## 8. فحص ما قبل الإعلان
-
-- تأكد من أن روابط WhatsApp صحيحة.
-- تأكد من البريد الرسمي.
-- تأكد من عدم وجود رسوم/متطلبات قديمة.
-- افحص العربية RTL والموبايل.
-- افحص كل Official Website link.
-- لا تستخدم claims مثل Official Partner إلا إذا كان لديك إثبات رسمي.
-- لا تنشر أي API key.
-
-## 9. بعد الإطلاق
-
-المرحلة التالية تكون:
-
-1. Analytics + conversion events
-2. Google Business Profile
-3. Content SEO / Guides
-4. Supabase data migration
-5. Admin Dashboard
-6. Real YAZ AI grounded on verified data
+بعد نجاح Production infrastructure نعود إلى مشكلة YAZ AI ونصلح routing/context بشكل منفصل بدون خلطها مع مشاكل النشر.

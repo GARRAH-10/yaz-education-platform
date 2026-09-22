@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Header } from "@/components/header";
@@ -7,6 +8,7 @@ import { WhatsAppContact } from "@/components/whatsapp-contact";
 import { JsonLd } from "@/components/json-ld";
 import type { Locale } from "@/data/content";
 import { breadcrumbJsonLd, buildMetadata, SEO_TEXT } from "@/lib/seo";
+import { getUniversities } from "@/lib/catalog";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -21,6 +23,7 @@ export default async function UniversitiesDirectoryPage({ params }: { params: Pr
   if (locale !== "en" && locale !== "ar") notFound();
   const safeLocale = locale as Locale;
   const isAr = safeLocale === "ar";
+  const universities = await getUniversities();
 
   return (
     <main className="universities-directory-page" dir={isAr ? "rtl" : "ltr"}>
@@ -35,10 +38,10 @@ export default async function UniversitiesDirectoryPage({ params }: { params: Pr
           <p className="directory-kicker">{isAr ? "دليل الجامعات" : "UNIVERSITY DIRECTORY"}</p>
           <h1>{isAr ? "استكشف الجامعات في ماليزيا" : "Explore Universities in Malaysia"}</h1>
           <p>{isAr ? "ابحث وقارن بين المؤسسات التي نعرضها في YAZ حسب النوع والموقع ومجال الدراسة، ثم افتح الملف الكامل لكل جامعة." : "Search and compare institutions by type, location and study area, then open each university profile for verified details and official sources."}</p>
-          <div className="mt-6"><a className="directory-programme-link" href={`/${locale}/programmes`}>{isAr ? "ابحث حسب التخصص أو البرنامج" : "Search by field or programme"}</a></div>
+          <div className="mt-6"><Link className="directory-programme-link" href={`/${locale}/programmes`} prefetch={true}>{isAr ? "ابحث حسب التخصص أو البرنامج" : "Search by field or programme"}</Link></div>
         </div>
       </section>
-      <UniversityDirectory locale={safeLocale} />
+      <UniversityDirectory locale={safeLocale} items={universities} />
       <Footer locale={safeLocale} />
       <WhatsAppContact locale={safeLocale} />
     </main>

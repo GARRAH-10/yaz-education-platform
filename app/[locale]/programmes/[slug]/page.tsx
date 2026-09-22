@@ -3,13 +3,13 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, BookOpen, Building2, CalendarDays, CheckCircle2, Clock3, ExternalLink, GraduationCap, MapPin, WalletCards } from "lucide-react";
+import { ArrowLeft, ArrowRight, Award, BookOpen, Building2, CalendarDays, CheckCircle2, Clock3, ExternalLink, FileText, GraduationCap, MapPin, WalletCards } from "lucide-react";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { WhatsAppContact } from "@/components/whatsapp-contact";
 import { JsonLd } from "@/components/json-ld";
-import { PROGRAMME_BY_SLUG, PROGRAMMES } from "@/data/programmes";
-import { UNIVERSITY_UI } from "@/data/university-ui";
+import { PROGRAMMES } from "@/data/programmes";
+import { getProgrammeBySlug, getUniversityBySlug } from "@/lib/catalog";
 import type { Locale } from "@/data/content";
 import { absoluteUrl, breadcrumbJsonLd, buildMetadata } from "@/lib/seo";
 
@@ -21,7 +21,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug } = await params;
   if (locale !== "en" && locale !== "ar") return {};
-  const programme = PROGRAMME_BY_SLUG[slug];
+  const programme = await getProgrammeBySlug(slug);
   if (!programme) return {};
   const safeLocale = locale as Locale;
   const title = safeLocale === "ar"
@@ -36,17 +36,18 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function ProgrammeProfile({ params }: { params: Promise<{ locale: string; slug: string }> }) {
   const { locale, slug } = await params;
   if (locale !== "en" && locale !== "ar") notFound();
-  const programme = PROGRAMME_BY_SLUG[slug];
+  const programme = await getProgrammeBySlug(slug);
   if (!programme) notFound();
 
   const safeLocale = locale as Locale;
   const isAr = safeLocale === "ar";
   const BackIcon = isAr ? ArrowRight : ArrowLeft;
+  const displayName = isAr && programme.arabicName ? programme.arabicName : programme.name;
 
-  const whatsappMessage = encodeURIComponent(`${isAr ? "مرحباً YAZ Education، أريد الاستفسار عن البرنامج:" : "Hello YAZ Education, I would like to ask about this programme:"}\n${programme.name}\n${programme.universityName}`);
+  const whatsappMessage = encodeURIComponent(`${isAr ? "مرحباً YAZ Education، أريد أحدث الرسوم ومعلومات التقديم لهذا البرنامج:" : "Hello YAZ Education, I would like the latest tuition fee and application information for this programme:"}\n${programme.name}\n${programme.universityName}`);
 
   const profilePath = `/${safeLocale}/programmes/${programme.slug}`;
-  const universityUi = (UNIVERSITY_UI as Record<string, any>)[programme.universitySlug];
+  const universityUi = await getUniversityBySlug(programme.universitySlug);
   const courseJsonLd = {
     "@context": "https://schema.org",
     "@type": "Course",
@@ -79,14 +80,14 @@ export default async function ProgrammeProfile({ params }: { params: Promise<{ l
           <div className="programme-profile-hero-grid">
             <div>
               <p className="directory-kicker">{programme.universityShortName}</p>
-              <h1>{programme.name}</h1>
+              <h1>{displayName}</h1>
               <div className="programme-profile-tags">
                 <span><GraduationCap size={16} />{programme.level}</span>
                 <span><BookOpen size={16} />{programme.field}</span>
                 <span><MapPin size={16} />{programme.campus ?? programme.city}</span>
               </div>
               <div className="programme-profile-actions">
-                <a className="primary-btn" href={`https://wa.me/60102282144?text=${whatsappMessage}`} target="_blank" rel="noreferrer">{isAr ? "استشر YAZ عن هذا البرنامج" : "Ask YAZ About This Programme"}</a>
+                <a className="primary-btn" href={`https://wa.me/60102282144?text=${whatsappMessage}`} target="_blank" rel="noreferrer">{isAr ? "احصل على أحدث الرسوم" : "Get Latest Tuition Fee"}</a>
                 <a className="secondary-btn" href={programme.sourceUrl} target="_blank" rel="noreferrer">{isAr ? "المصدر الرسمي" : "Official Source"}<ExternalLink size={16} /></a>
               </div>
             </div>
@@ -105,7 +106,8 @@ export default async function ProgrammeProfile({ params }: { params: Promise<{ l
             <Fact icon={<MapPin size={20} />} label={isAr ? "الموقع" : "Location"} value={programme.campus ?? programme.city} />
             <Fact icon={<Clock3 size={20} />} label={isAr ? "المدة" : "Duration"} value={programme.duration ?? (isAr ? "غير موثق بعد" : "Not yet verified")} />
             <Fact icon={<CalendarDays size={20} />} label={isAr ? "مواعيد القبول" : "Intakes"} value={programme.intakes?.join(", ") ?? (isAr ? "غير موثق بعد" : "Not yet verified")} />
-            <Fact icon={<WalletCards size={20} />} label={isAr ? "الرسوم الدولية" : "International fee"} value={programme.internationalFee ?? (isAr ? "غير موثق بعد" : "Not yet verified")} />
+            <Fact icon={<WalletCards size={20} />} label={isAr ? "أحدث الرسوم" : "Latest tuition fee"} value={isAr ? "تواصل مع مستشار YAZ" : "Contact a YAZ advisor"} />
+            <Fact icon={<BookOpen size={20} />} label={isAr ? "نمط الدراسة" : "Study mode"} value={programme.studyMode ?? (isAr ? "غير موثق بعد" : "Not yet verified")} />
             <Fact icon={<CheckCircle2 size={20} />} label={isAr ? "آخر تحقق" : "Last verified"} value={programme.verifiedAt} />
           </div>
 
@@ -113,13 +115,49 @@ export default async function ProgrammeProfile({ params }: { params: Promise<{ l
             <article className="programme-profile-main-card">
               <p className="directory-kicker">{isAr ? "تفاصيل البرنامج" : "PROGRAMME DETAILS"}</p>
               <h2>{isAr ? "ما الذي تم التحقق منه؟" : "What has been verified?"}</h2>
-              <p>{isAr ? "تعرض هذه الصفحة فقط المعلومات التي تم التحقق منها من المصدر الرسمي للجامعة. أي متطلبات أو رسوم أو مواعيد غير موجودة هنا يجب تأكيدها قبل التقديم." : "This page only displays information verified from the university's official source. Any requirements, fees or dates not shown here should be reconfirmed before application."}</p>
+              <p>{isAr ? "تعرض هذه الصفحة المعلومات التي تم التحقق منها من المصدر الرسمي للجامعة. لا نعرض الرسوم الدقيقة للعامة لأنها قد تتغير حسب السنة والدفعة والحالة؛ يؤكدها مستشار YAZ قبل التقديم." : "This page displays information verified from the university's official source. Exact tuition fees are intentionally not published because they can change by year, intake and applicant status; a YAZ advisor confirms the current fee before application."}</p>
 
               {programme.specialisations?.length ? (
                 <div className="programme-profile-specialisations">
                   <h3>{isAr ? "التخصصات / المسارات" : "Specialisations / pathways"}</h3>
                   <div>{programme.specialisations.map((item) => <span key={item}>{item}</span>)}</div>
                 </div>
+              ) : null}
+
+              {(isAr ? programme.academicRequirementsAr : programme.academicRequirementsEn) ? (
+                <ProgrammeDetailSection icon={<GraduationCap size={19} />} title={isAr ? "المتطلبات الأكاديمية" : "Academic requirements"}>
+                  <p>{isAr ? programme.academicRequirementsAr : programme.academicRequirementsEn}</p>
+                </ProgrammeDetailSection>
+              ) : null}
+
+              {(isAr ? programme.englishRequirementsAr : programme.englishRequirementsEn) ? (
+                <ProgrammeDetailSection icon={<BookOpen size={19} />} title={isAr ? "متطلبات اللغة الإنجليزية" : "English requirements"}>
+                  <p>{isAr ? programme.englishRequirementsAr : programme.englishRequirementsEn}</p>
+                </ProgrammeDetailSection>
+              ) : null}
+
+              {(isAr ? programme.requiredDocumentsAr : programme.requiredDocumentsEn)?.length ? (
+                <ProgrammeDetailSection icon={<FileText size={19} />} title={isAr ? "المستندات المطلوبة" : "Required documents"}>
+                  <ul>{(isAr ? programme.requiredDocumentsAr : programme.requiredDocumentsEn)?.map((item) => <li key={item}>{item}</li>)}</ul>
+                </ProgrammeDetailSection>
+              ) : null}
+
+              {programme.accreditation ? (
+                <ProgrammeDetailSection icon={<Award size={19} />} title={isAr ? "الاعتماد / الاعتراف" : "Accreditation / recognition"}>
+                  <p>{programme.accreditation}</p>
+                </ProgrammeDetailSection>
+              ) : null}
+
+              {(isAr ? programme.scholarshipInfoAr : programme.scholarshipInfoEn) ? (
+                <ProgrammeDetailSection icon={<WalletCards size={19} />} title={isAr ? "معلومات المنح" : "Scholarship information"}>
+                  <p>{isAr ? programme.scholarshipInfoAr : programme.scholarshipInfoEn}</p>
+                </ProgrammeDetailSection>
+              ) : null}
+
+              {(isAr ? programme.applicationNotesAr : programme.applicationNotesEn) ? (
+                <ProgrammeDetailSection icon={<CheckCircle2 size={19} />} title={isAr ? "ملاحظات التقديم" : "Application notes"}>
+                  <p>{isAr ? programme.applicationNotesAr : programme.applicationNotesEn}</p>
+                </ProgrammeDetailSection>
               ) : null}
             </article>
 
@@ -142,4 +180,8 @@ export default async function ProgrammeProfile({ params }: { params: Promise<{ l
 
 function Fact({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return <article className="programme-fact-card"><span>{icon}</span><p>{label}</p><strong>{value}</strong></article>;
+}
+
+function ProgrammeDetailSection({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+  return <section className="programme-detail-section"><div className="programme-detail-section-title"><span>{icon}</span><h3>{title}</h3></div>{children}</section>;
 }

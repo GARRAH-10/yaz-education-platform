@@ -7,6 +7,7 @@ import { WhatsAppContact } from "@/components/whatsapp-contact";
 import { JsonLd } from "@/components/json-ld";
 import type { Locale } from "@/data/content";
 import { breadcrumbJsonLd, buildMetadata, SEO_TEXT } from "@/lib/seo";
+import { getProgrammes, getUniversities } from "@/lib/catalog";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -16,11 +17,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   return buildMetadata({ locale: safeLocale, path: "/programmes", title: seo.programmesTitle, description: seo.programmesDescription });
 }
 
-export default async function ProgrammesPage({ params }: { params: Promise<{ locale: string }> }) {
+export default async function ProgrammesPage({ params, searchParams }: { params: Promise<{ locale: string }>; searchParams: Promise<{ field?: string; level?: string; q?: string }> }) {
   const { locale } = await params;
+  const filters = await searchParams;
   if (locale !== "en" && locale !== "ar") notFound();
   const safeLocale = locale as Locale;
   const isAr = safeLocale === "ar";
+  const [programmes, institutions] = await Promise.all([getProgrammes(), getUniversities()]);
 
   return (
     <main className="programme-directory-page" dir={isAr ? "rtl" : "ltr"}>
@@ -29,7 +32,14 @@ export default async function ProgrammesPage({ params }: { params: Promise<{ loc
         { name: isAr ? "البرامج الدراسية" : "Programmes", path: `/${safeLocale}/programmes` },
       ])} />
       <section className="programme-directory-header"><Header locale={safeLocale} /></section>
-      <ProgrammeDirectory locale={safeLocale} />
+      <ProgrammeDirectory
+        locale={safeLocale}
+        programmes={programmes}
+        institutions={institutions}
+        initialField={filters.field ?? ""}
+        initialLevel={filters.level ?? ""}
+        initialQuery={filters.q ?? ""}
+      />
       <Footer locale={safeLocale} />
       <WhatsAppContact locale={safeLocale} />
     </main>

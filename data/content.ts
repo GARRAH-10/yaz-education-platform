@@ -6,7 +6,7 @@ export const content = {
     nav: {
       home: "Home",
       universities: "Universities",
-      programs: "Programs",
+      programs: "Programmes",
       services: "Services",
       malaysia: "Study in Malaysia",
       about: "About",
@@ -30,14 +30,14 @@ export const content = {
     ai: {
       name: "YAZ AI",
       subtitle: "Your Study Advisor",
-      hello: "Hi 👋 I’m YAZ AI, your study advisor. Ask me about Malaysian universities, programmes, tuition, intakes or admission requirements.",
+      hello: "Hi 👋 I’m YAZ AI, your study advisor. Ask me naturally about universities, programmes, admissions, study fields, careers, student life in Malaysia, or general study questions. I can check verified YAZ data when needed.",
       prompt: "Type your question...",
       open: "Ask YAZ AI",
       human: "Talk to a human advisor",
       quick: [
         ["Find a university", "Tell me your preferred field, study level and budget, and I can help narrow down suitable university options."],
         ["Find a program", "Tell me what you want to study and your current qualification, and I can help structure your program search."],
-        ["Tuition & budget", "Share your approximate yearly budget in RM and your study level, and I can help organize suitable options."],
+        ["Tuition & budget", "Share your approximate budget and study level. I can help narrow suitable options, while a YAZ advisor confirms the latest official tuition fee."],
         ["Entry requirements", "Tell me your qualification, grades and intended program so I can explain the typical requirements to check."],
         ["Intakes", "Tell me the university or program you are considering and I can help you plan which intake information to verify."],
         ["Accommodation", "Tell me your university or preferred area and budget, and I can help you think through accommodation options."]
@@ -77,7 +77,7 @@ export const content = {
     ai: {
       name: "YAZ AI",
       subtitle: "مستشارك الدراسي",
-      hello: "مرحباً 👋 أنا YAZ AI، مستشارك الدراسي. اسألني عن الجامعات والتخصصات والرسوم ومواعيد القبول ومتطلبات الدراسة في ماليزيا.",
+      hello: "مرحباً 👋 أنا YAZ AI، مستشارك الدراسي. اسألني بشكل طبيعي عن الجامعات والتخصصات والقبول والمجالات الدراسية والمسارات المهنية والحياة الطلابية في ماليزيا. أتحقق من بيانات YAZ الموثقة عند الحاجة.",
       prompt: "اكتب سؤالك...",
       open: "اسأل YAZ AI",
       human: "تحدث مع مستشار",
