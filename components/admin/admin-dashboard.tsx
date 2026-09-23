@@ -35,6 +35,14 @@ type Props = {
 
 type Tab = "overview" | "universities" | "programmes" | "institutes" | "consultations";
 type EditEntity = "universities" | "programmes" | "language-institutes";
+type EditableRecord = University | Programme | Institute;
+type RemoveHandler = (entity: EditEntity, id: string, label: string) => void;
+type TableProps<T extends Record<string, any>> = {
+  rows: T[];
+  onAdd: () => void;
+  onEdit: (record: T) => void;
+  onDelete: RemoveHandler;
+};
 
 const universityFields = [
   ["slug", "Slug"], ["name", "Name"], ["short_name", "Short name"], ["arabic_name", "Arabic name"],
@@ -53,7 +61,7 @@ const CURRENCIES = ["MYR", "USD", "GBP", "AUD", "SGD"] as const;
 export function AdminDashboard(props: Props) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("overview");
-  const [editor, setEditor] = useState<{ entity: EditEntity; record: Record<string, any> | null } | null>(null);
+  const [editor, setEditor] = useState<{ entity: EditEntity; record: EditableRecord | null } | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -163,14 +171,14 @@ function Overview({ universities, programmes, institutes, consultations, newLead
 function PanelHeader({ title, count, onAdd }: { title: string; count: number; onAdd: () => void }) {
   return <div className="admin-panel-header"><div><h2>{title}</h2><p>{count} records</p></div><button onClick={onAdd}><Plus size={17} /> Add new</button></div>;
 }
-function UniversityTable({ rows, onAdd, onEdit, onDelete }: any) {
-  return <div className="admin-panel"><PanelHeader title="Universities" count={rows.length} onAdd={onAdd} /><div className="admin-table-wrap"><table><thead><tr><th>Institution</th><th>Location</th><th>Type</th><th>Verified</th><th /></tr></thead><tbody>{rows.map((row: any) => <tr key={row.id}><td><strong>{row.short_name}</strong><span>{row.name}</span></td><td>{row.city || "—"}</td><td>{row.institution_type || "—"}</td><td>{row.verified ? "Yes" : "No"}</td><td><RowActions onEdit={() => onEdit(row)} onDelete={() => onDelete("universities", row.id, row.name)} /></td></tr>)}</tbody></table></div></div>;
+function UniversityTable({ rows, onAdd, onEdit, onDelete }: TableProps<University>) {
+  return <div className="admin-panel"><PanelHeader title="Universities" count={rows.length} onAdd={onAdd} /><div className="admin-table-wrap"><table><thead><tr><th>Institution</th><th>Location</th><th>Type</th><th>Verified</th><th /></tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td><strong>{row.short_name}</strong><span>{row.name}</span></td><td>{row.city || "—"}</td><td>{row.institution_type || "—"}</td><td>{row.verified ? "Yes" : "No"}</td><td><RowActions onEdit={() => onEdit(row)} onDelete={() => onDelete("universities", row.id, row.name)} /></td></tr>)}</tbody></table></div></div>;
 }
-function ProgrammeTable({ rows, onAdd, onEdit, onDelete }: any) {
-  return <div className="admin-panel"><PanelHeader title="Programmes" count={rows.length} onAdd={onAdd} /><div className="admin-table-wrap"><table><thead><tr><th>Programme</th><th>University</th><th>Level</th><th>Campus</th><th>Fee</th><th>Verified</th><th /></tr></thead><tbody>{rows.map((row: any) => <tr key={row.id}><td><strong>{row.name}</strong><span>{row.field || row.slug}</span></td><td>{row.universities?.short_name || "—"}</td><td>{row.level}</td><td>{row.campus || "—"}</td><td>{row.international_fee || (row.international_fee_amount ? `${row.fee_currency || "MYR"} ${Number(row.international_fee_amount).toLocaleString()}` : "—")}</td><td>{row.verified_at || "No"}</td><td><RowActions onEdit={() => onEdit(row)} onDelete={() => onDelete("programmes", row.id, row.name)} /></td></tr>)}</tbody></table></div></div>;
+function ProgrammeTable({ rows, onAdd, onEdit, onDelete }: TableProps<Programme>) {
+  return <div className="admin-panel"><PanelHeader title="Programmes" count={rows.length} onAdd={onAdd} /><div className="admin-table-wrap"><table><thead><tr><th>Programme</th><th>University</th><th>Level</th><th>Campus</th><th>Fee</th><th>Verified</th><th /></tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td><strong>{row.name}</strong><span>{row.field || row.slug}</span></td><td>{row.universities?.short_name || "—"}</td><td>{row.level}</td><td>{row.campus || "—"}</td><td>{row.international_fee || (row.international_fee_amount ? `${row.fee_currency || "MYR"} ${Number(row.international_fee_amount).toLocaleString()}` : "—")}</td><td>{row.verified_at || "No"}</td><td><RowActions onEdit={() => onEdit(row)} onDelete={() => onDelete("programmes", row.id, row.name)} /></td></tr>)}</tbody></table></div></div>;
 }
-function InstituteTable({ rows, onAdd, onEdit, onDelete }: any) {
-  return <div className="admin-panel"><PanelHeader title="Language institutes" count={rows.length} onAdd={onAdd} /><div className="admin-table-wrap"><table><thead><tr><th>Institute</th><th>Location</th><th>Verified</th><th /></tr></thead><tbody>{rows.map((row: any) => <tr key={row.id}><td><strong>{row.short_name}</strong><span>{row.name}</span></td><td>{row.city || "—"}</td><td>{row.verified ? "Yes" : "No"}</td><td><RowActions onEdit={() => onEdit(row)} onDelete={() => onDelete("language-institutes", row.id, row.name)} /></td></tr>)}</tbody></table></div></div>;
+function InstituteTable({ rows, onAdd, onEdit, onDelete }: TableProps<Institute>) {
+  return <div className="admin-panel"><PanelHeader title="Language institutes" count={rows.length} onAdd={onAdd} /><div className="admin-table-wrap"><table><thead><tr><th>Institute</th><th>Location</th><th>Verified</th><th /></tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td><strong>{row.short_name}</strong><span>{row.name}</span></td><td>{row.city || "—"}</td><td>{row.verified ? "Yes" : "No"}</td><td><RowActions onEdit={() => onEdit(row)} onDelete={() => onDelete("language-institutes", row.id, row.name)} /></td></tr>)}</tbody></table></div></div>;
 }
 function RowActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) { return <div className="admin-row-actions"><button onClick={onEdit} title="Edit"><Pencil size={15} /></button><button onClick={onDelete} title="Delete" className="danger"><Trash2 size={15} /></button></div>; }
 
@@ -178,7 +186,7 @@ function Consultations({ rows, onStatus }: { rows: Consultation[]; onStatus: (id
   return <div className="admin-panel"><div className="admin-panel-header"><div><h2>Consultation leads</h2><p>{rows.length} most recent enquiries</p></div></div><div className="admin-table-wrap"><table><thead><tr><th>Student</th><th>Contact</th><th>Interest</th><th>Date</th><th>Status</th></tr></thead><tbody>{rows.map((row) => <tr key={row.id}><td><strong>{row.full_name}</strong><span>{row.nationality}</span></td><td><a href={`https://wa.me/${String(row.whatsapp || "").replace(/\D/g, "")}`} target="_blank" rel="noreferrer">{row.whatsapp}</a><span>{row.email || ""}</span></td><td>{row.study_level}<span>{row.field_of_study || ""}</span></td><td>{row.created_at ? new Date(row.created_at).toLocaleDateString() : "—"}</td><td><select value={row.status} onChange={(event) => onStatus(row.id, event.target.value)}><option value="new">New</option><option value="contacted">Contacted</option><option value="qualified">Qualified</option><option value="closed">Closed</option></select></td></tr>)}</tbody></table></div></div>;
 }
 
-function Editor({ entity, record, universities, onClose, onSaved }: { entity: EditEntity; record: Record<string, any> | null; universities: University[]; onClose: () => void; onSaved: (text: string) => void }) {
+function Editor({ entity, record, universities, onClose, onSaved }: { entity: EditEntity; record: EditableRecord | null; universities: University[]; onClose: () => void; onSaved: (text: string) => void }) {
   const [form, setForm] = useState<Record<string, any>>(() => ({ ...(record || {}), verified: record?.verified ?? false }));
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -196,7 +204,7 @@ function Editor({ entity, record, universities, onClose, onSaved }: { entity: Ed
     onSaved(record?.id ? "Record updated." : "Record created.");
   }
 
-  return <div className="admin-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><div className="admin-editor"><header><div><p className="admin-eyebrow">{record ? "EDIT RECORD" : "NEW RECORD"}</p><h2>{entity === "language-institutes" ? "Language institute" : entity.slice(0, -1)}</h2></div><button onClick={onClose}><X /></button></header><div className="admin-editor-body">
+  return <div className="admin-modal-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><div className="admin-editor"><header><div><p className="admin-eyebrow">{record ? "EDIT RECORD" : "NEW RECORD"}</p><h2>{entity === "language-institutes" ? "Language institute" : entity === "universities" ? "University" : "Programme"}</h2></div><button onClick={onClose}><X /></button></header><div className="admin-editor-body">
     {isProgramme ? <>
       <SectionTitle title="Programme information" description="Core information used by programme search and profile pages." />
       <label><span>University *</span><select value={form.university_id || ""} onChange={(e) => set("university_id", e.target.value)}><option value="">Select university</option>{universities.map((item) => <option key={item.id} value={item.id}>{item.short_name} — {item.name}</option>)}</select></label>

@@ -22,7 +22,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ ent
     return NextResponse.json({ ok: false, error: "University and study level are required." }, { status: 400 });
   }
 
-  const { data, error } = await context.supabase.from(ENTITY_TABLES[key]).insert(payload).select().single();
+  const { data, error } = await context.supabase.from(ENTITY_TABLES[key]).insert(payload as any).select().single();
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
   revalidateTag("catalog");
   return NextResponse.json({ ok: true, data }, { headers: noStoreHeaders() });

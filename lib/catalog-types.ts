@@ -14,8 +14,8 @@ export type UniversityCatalogItem = {
   campusAr: string;
   summaryEn: string;
   summaryAr: string;
-  studyAreasEn: string[];
-  studyAreasAr: string[];
+  studyAreasEn: readonly string[];
+  studyAreasAr: readonly string[];
   officialUrl: string;
   verified: boolean;
   verifiedAt?: string | null;

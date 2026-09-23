@@ -18,7 +18,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ en
   let body: Record<string, unknown>;
   try { body = await request.json(); } catch { return NextResponse.json({ ok: false, error: "Invalid JSON." }, { status: 400 }); }
   const payload = normalizePayload(entity, body);
-  const { data, error } = await context.supabase.from(ENTITY_TABLES[entity]).update(payload).eq("id", id).select().single();
+  const { data, error } = await context.supabase.from(ENTITY_TABLES[entity]).update(payload as any).eq("id", id).select().single();
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 400 });
   revalidateTag("catalog");
   return NextResponse.json({ ok: true, data }, { headers: noStoreHeaders() });
